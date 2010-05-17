@@ -36,7 +36,7 @@ RECORD_A = getRecordA()
 # On the surface of it, a DNS resolver which only responds
 # with it's own IP address may seem to be the most idiotic class
 # ever written. But HAHA! For us, the only thing better than
-# a dummy resolver is a usefull idiot.
+# a dummy resolver is a useful idiot.
 ##
 class MammatusIdioticResolver(common.ResolverBase):
     """ Respond to all requests with own IP address
