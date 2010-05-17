@@ -1,4 +1,8 @@
 
+### ignore this file, just notes from original idea ###
+
+
+
 To add a tracker to a Mammatus Cloud you simply add an NS records to your DNS zone
 and delegate a subdomain to the tracker's IP address.
 
@@ -13,7 +17,7 @@ resolving it's own ip address. This means two cool things: 1) it will only
 respond if it is actually up and running. 2) all existing clients will already
 try the next NS record if it does not respond. Super.
 
-Tracker data is stored in redis, so they all have the same data.
+Tracker data is stored in lightcloud, so they all have the same data.
 
 i.e.
 
@@ -49,7 +53,7 @@ something like that anyway.
 
 The Mammatus tracker serves as a proxy for all uploads, it does the following:
 
-- stores each chunk of the upload and the list of chunks in redis
+- stores each chunk of the upload and the list of chunks in lightcloud
 
 This way recovery is possible even if the tracker itself goes down during
 upload, although the client will need to have support for this.
