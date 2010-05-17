@@ -9,7 +9,6 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(('telekommunisten.org', 0)) 
 ImaIPAddr = s.getsockname()[0]
 ImaRecordA = Record_A(ImaIPAddr,'1')
-ImaRR = RRHeader(name='mammacloud',type=A,cls=IN,ttl=1,payload=ImaRecordA)
 
 class MammatusResolver(common.ResolverBase):
     def __init__(self):
@@ -18,15 +17,17 @@ class MammatusResolver(common.ResolverBase):
         self._waiting = {}
 
     def _lookup(self, name, cls, type, timeout):
-        print "LOOKUP!!"
+        print "LOOKUP!!", name
         key = (name, type, cls)
         waiting = self._waiting.get(key)
         if waiting is None:
             self._waiting[key] = []
+            d = defer
             d = defer.fail(IOError("No domain name servers available"))
             def cbResult(result):
                 for d in self._waiting.pop(key):
                     d.callback(result)
+                ImaRR = RRHeader(name=name,type=A,cls=IN,ttl=1,payload=ImaRecordA)
                 return ([ImaRR], [], [])
             d.addBoth(cbResult)
         else:
