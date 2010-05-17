@@ -84,7 +84,7 @@ class MammatusRedirectToCdn(resource.Resource):
         # Special url components can be added here, but for example
         # we just us a static base url
         ##
-        cdnUrl = "http://media.telekommunisten.net/"
+        cdnUrl = "http://www.archive.org/download/"
         requestUrl = request.uri
         return urlparse.urljoin(cdnUrl, requestUrl)
         
