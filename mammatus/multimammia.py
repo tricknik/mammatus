@@ -92,12 +92,11 @@ class MammatusRedirectToCdn(resource.Resource):
                 domainlevels = socket.getfqdn().split(".")
                 levelcount = len(domainlevels)
             registeredDomain = domainlevels[levelcount-2:levelcount]
-            subdomain = domainlevels[:levelcount-2]
-            subdomain.append("_mammatus")
+            subdomain = [domainlevels[:levelcount-2].pop(), "_mammatus"]
             mammatus_key = ".".join(subdomain) 
             root_zone = ".".join(registeredDomain)
             return (mammatus_key, root_zone)
-        url = urlparse.urlparse(request.uri).netloc
+        url = request.getRequestHostname()
         (mammatus_key, root_zone) = getZone(url)
         d = client.lookupText(".".join((mammatus_key, root_zone)))
         def gotError(failure):
