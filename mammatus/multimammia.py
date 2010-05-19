@@ -38,12 +38,6 @@ def getRecordA():
 RECORD_A = getRecordA()
 
 
-#########
-# Dictionary of CDN baseUrls for domains
-# Set when request for a given domain is recieved
-##
-
-BASEURLS = {}
 
 
 #########
@@ -78,7 +72,7 @@ class MammatusIdioticResolver(common.ResolverBase):
 #########
 # What could be a better companion to a DNS Resolver
 # that always claims to be whatever domain you are looking for
-# Wharever you want It's OVER HERE!!! 
+# Whatever you want: It's OVER HERE!!! 
 # Umm, No it's not. Try over there.
 ##
 class MammatusRedirectToCdn(resource.Resource):
@@ -92,6 +86,8 @@ class MammatusRedirectToCdn(resource.Resource):
         def getZone(uri):
             domainlevels = uri.split(".")
             levelcount = len(domainlevels)
+            # if the request is comming from an not fully qualied
+            # domain name, i.e "localhost", use our own.
             if levelcount < 2:
                 domainlevels = socket.getfqdn().split(".")
                 levelcount = len(domainlevels)
@@ -117,10 +113,17 @@ class MammatusRedirectToCdn(resource.Resource):
             return d
         def getStorageUrls(result):
             (answer, authority, additional) = result
-            if answer and answer[0].payload.data:
-                #request.write(str(answer[0].payload.data[0]))
-                #request.finish()
-                return choice(["http://www.archive.org",])
+            CDNs = []
+            token = "endpoint:"
+            tokenlength = len(token)
+            if answer:
+                for a in answer:
+                    for d in a.payload.data:
+                        for e in str(d).split(";"):
+                                item = e.strip()
+                                if item[:tokenlength] == token:
+                                    CDNs.append(item[tokenlength:])
+                return choice(CDNs)
             else:
                 return gotError(None)
         d.addCallbacks(getStorageUrls, gotError)
@@ -132,29 +135,33 @@ class MammatusRedirectToCdn(resource.Resource):
         d.addCallback(redirect)
         return web_server.NOT_DONE_YET
 
-#########
-# Mammatus is the giver of names, on TCP and UDP.
-##
-verbosity = 0
-resolver = MammatusIdioticResolver()
-tcpFactory = names_server.DNSServerFactory(clients=[resolver], verbose=verbosity)
-udpFactory = dns.DNSDatagramProtocol(tcpFactory)
-tcpFactory.noisy = udpFactory.noisy = verbosity
-dns_service = service.MultiService()
-internet.TCPServer(53, tcpFactory).setServiceParent(dns_service)
-internet.UDPServer(53, udpFactory).setServiceParent(dns_service)
-
-#########
-# Mammatus feeds you, over HTTP.
-##
-httpFactory = web_server.Site(MammatusRedirectToCdn())
-web_service = internet.TCPServer(80, httpFactory)
 
 
 #########
 # Attach method called by tac
 ##
 def attach(application):
+    #########
+    # Mammatus is the giver of names, on TCP and UDP.
+    ##
+    verbosity = 0
+    resolver = MammatusIdioticResolver()
+    tcpFactory = names_server.DNSServerFactory(clients=[resolver], verbose=verbosity)
+    udpFactory = dns.DNSDatagramProtocol(tcpFactory)
+    tcpFactory.noisy = udpFactory.noisy = verbosity
+    dns_service = service.MultiService()
+    internet.TCPServer(53, tcpFactory).setServiceParent(dns_service)
+    internet.UDPServer(53, udpFactory).setServiceParent(dns_service)
+
+    #########
+    # Mammatus feeds you, over HTTP.
+    ##
+    httpFactory = web_server.Site(MammatusRedirectToCdn())
+    web_service = internet.TCPServer(80, httpFactory)
+
+    #########
+    # Expose Mammia
+    ##
     web_service.setServiceParent(application)
     dns_service.setServiceParent(application)
 
