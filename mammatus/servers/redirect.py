@@ -31,9 +31,6 @@ class MammatusRedirect(resource.Resource):
             mammatus_key = ".".join(subdomain) 
             root_zone = ".".join(registeredDomain)
             return (mammatus_key, root_zone)
-        url = request.getRequestHostname()
-        (mammatus_key, root_zone) = getZone(url)
-        d = client.lookupText(".".join((mammatus_key, root_zone)))
         def gotError(failure):
             service_fqdn = ".".join(("_mammatus._tcp", root_zone))
             d = client.lookupService(service_fqdn) 
@@ -50,22 +47,29 @@ class MammatusRedirect(resource.Resource):
             CDNs = []
             token = "endpoint:"
             tokenlength = len(token)
+            target = ''
             if answer:
                 for a in answer:
-                    for d in a.payload.data:
-                        for e in str(d).split(";"):
-                                item = e.strip()
-                                if item[:tokenlength] == token:
-                                    CDNs.append(item[tokenlength:])
-                return choice(CDNs)
+                    if hasattr(a.payload,'data'):
+                        for d in a.payload.data:
+                            for e in str(d).split(";"):
+                                    item = e.strip()
+                                    if item[:tokenlength] == token:
+                                        CDNs.append(item[tokenlength:])
+                if CDNs:
+                    target = choice(CDNs)
             else:
-                return gotError(None)
-        d.addCallbacks(getStorageUrls, gotError)
+                target = gotError(None)
+            return target
         def redirect(url):
             endpoint =  urlparse.urljoin(url, request.uri)
             request.redirect(endpoint)
             request.finish()
             return None
+        url = request.getRequestHostname()
+        (mammatus_key, root_zone) = getZone(url)
+        d = client.lookupText(".".join((mammatus_key, root_zone)))
+        d.addCallbacks(getStorageUrls, gotError)
         d.addCallback(redirect)
         return server.NOT_DONE_YET
 

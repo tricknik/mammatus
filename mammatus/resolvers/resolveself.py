@@ -28,10 +28,13 @@ class MammatusIdioticResolver(common.ResolverBase):
         def getRecordA():
             """ Return an A record with external IP address of localhost
             """
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            # umm, I know google is never, never, never-ever down right?
-            s.connect(('google.com', 0)) 
-            IPAddr = s.getsockname()[0]
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                # umm, I know google is never, never, never-ever down right?
+                s.connect(('google.com', 0)) 
+                IPAddr = s.getsockname()[0]
+            except:
+                IPAddr = "127.0.0.1"
             return dns.Record_A(IPAddr,'1')
         self.Record_A = getRecordA()
 
