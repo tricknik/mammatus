@@ -18,7 +18,7 @@ the _mammatus TXT record for the subdomain.
 from twisted.application import service, internet
 from twisted.web import server as web_server
 from twisted.names import server as names_server, dns
-
+import manager
 
 #########
 # On the surface of it, a DNS resolver which only responds
@@ -27,7 +27,7 @@ from twisted.names import server as names_server, dns
 # a dummy resolver is a useful idiot.
 ##
 from mammatus.resolvers import resolveself
-resolver = resolveself.getResolver()
+resolver = resolveself.getResolver(manager)
 
 #########
 # What could be a better companion to a DNS Resolver
@@ -36,7 +36,7 @@ resolver = resolveself.getResolver()
 # Umm, No it's not. Try over there.
 ##
 from mammatus.servers import redirect
-server = redirect.getServer()
+server = redirect.getServer(manager)
 
 #########
 # Attach method called by tac

@@ -18,9 +18,10 @@ from twisted.names import server as names_server, dns, common, client
 class MammatusIdioticResolver(common.ResolverBase):
     """ Respond to all requests with own IP address
     """
-    def __init__(self):
+    def __init__(self, manager):
         common.ResolverBase.__init__(self)
         self._waiting = {}
+        self.manager = manager
         #########
         # Create a DNS A Record for the IP address of this computer
         # by connecting to some outside place and checking the socket
@@ -55,6 +56,6 @@ class MammatusIdioticResolver(common.ResolverBase):
             waiting.append(d)
         return d
 
-def getResolver():
-    return MammatusIdioticResolver()
+def getResolver(manager):
+    return MammatusIdioticResolver(manager)
 
