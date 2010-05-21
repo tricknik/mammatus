@@ -6,11 +6,9 @@ Dmytri Kleiner <dk@telekommunisten.net>, 2010
 
 import socket, urlparse
 from twisted.internet import reactor, defer
+from twisted.internet.task import deferLater
 from twisted.names import client
 from random import choice
-
-def __init__():
-    pass
 
 class MammatusConfiguration:
     def __init__(self):
@@ -32,6 +30,28 @@ class MammatusConfiguration:
                 self.get = item[gettokenlength:]
             elif self.resolve == None and item[:resolvetokenlength] == resolvetoken:
                 self.resolve = item[resolvetokenlength:]
+
+def getOwnIpAddr():
+    """ Return an A record with external IP address of localhost
+    """
+    def findOwnIpAddr():
+        def gotResult(result):
+            return result
+        addr_or_d = None
+        try:
+           s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+           # umm, I know google is never, never, never-ever down right?
+           s.connect(('google.com', 0)) 
+           addr_or_d = s.getsockname()[0]
+        except:
+            try:
+                addr_or_d = client.getHostByName(socket.getfqdn())
+                addr_or_d.addCallback(gotResult)
+            except:
+                addr_or_d = "127.0.0.1"
+        return addr_or_d
+    d = deferLater(reactor, 0, findOwnIpAddr)
+    return d
 
 def getConfiguration(uri):
     def gotFailure(failure):
@@ -73,4 +93,31 @@ def getConfiguration(uri):
     d = client.lookupText(".".join((mammatus_key, root_zone)))
     d.addCallbacks(getConfigFromText, getService)
     return d 
+
+def getHostByName(name):
+    def discover(config):
+        def direct(result):
+            (answer, authority, additional) = result
+            addr_or_failure = None
+            for a in answer:
+                addr_or_failure = str(a.payload.dottedQuad())
+                break
+            if not addr_or_failure:
+                addr_or_failure = defer.fail(IOError("No hosts available"))
+            return addr_or_failure
+        def ipaddr(addr):
+            return addr
+        d = None
+        if config.resolve == "self":
+            d = getOwnIpAddr()
+            d.addCallback(ipaddr)
+        elif config.resolve == "endpoint":
+            endpoint = choice(config.endpoints)
+            netloc = urlparse.urlparse(endpoint).netloc
+            d = client.lookupAddress(netloc)
+            d.addCallback(direct)
+        return d
+    d = deferLater(reactor, 0, getConfiguration, name)
+    d.addCallback(discover)
+    return d
 
