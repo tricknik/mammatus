@@ -31,12 +31,12 @@ import model
 # Attach method called by tac
 ##
 def expose(application):
-    def attachResolver(resolver):
+    def attachDnsController(dns_controller):
         #########
         # Mammatus is the giver of names, on TCP and UDP.
         ##
         verbosity = 0
-        tcpFactory = names_server.DNSServerFactory(clients=[resolver], verbose=verbosity)
+        tcpFactory = names_server.DNSServerFactory(clients=[dns_controller], verbose=verbosity)
         udpFactory = names_dns.DNSDatagramProtocol(tcpFactory)
         tcpFactory.noisy = udpFactory.noisy = verbosity
         dns_service = service.MultiService()
@@ -54,8 +54,8 @@ def expose(application):
     #########
     # Expose Mammia
     ##
-    deferResolver = deferLater(reactor, 0, dns.getResolver, model)
-    deferResolver.addCallback(attachResolver)
+    deferDnsController = deferLater(reactor, 0, dns.getController, model)
+    deferDnsController.addCallback(attachDnsController)
     deferServer = deferLater(reactor, 0, http.getResource, model)
     deferServer.addCallback(attachServer)
 
