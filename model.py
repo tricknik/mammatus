@@ -9,6 +9,7 @@ from twisted.internet import reactor, defer
 from twisted.internet.task import deferLater
 from twisted.names import client
 from twisted.web.client import Agent
+from twisted.web.http_headers import Headers
 from random import choice
 
 class MammatusConfiguration:
@@ -96,32 +97,49 @@ def getConfiguration(uri):
     return d 
 
 def getHostByName(name):
+    """ Look up possible ip addresses for a name,
+        return a host on which http is responding
+        for the requested domain
+    """
     def discover(config):
         def direct(result):
             (answer, authority, additional) = result
-            addr_or_failure = None
-            for a in answer:
-                addr_or_failure = str(a.payload.dottedQuad())
-                addr = "http://noway/nohow"
+            httpAgent = Agent(reactor)
+            def responded(response, addr):
+                addr_or_defer = None
+                if hasattr(response, "code") and response.code == 200:
+                    addr_or_defer = addr
+                else:
+                    addr_or_defer = deferLater(reactor, 0, test)
+                return addr_or_defer
+            def test():
+                try:
+                    a = answer.pop()
+                except IndexError:
+                    return defer.fail(IOError("No hosts available"))
+                addr = str(a.payload.dottedQuad())
                 location = "://".join(('http', name))
-                r = Agent.request(method="HEAD", headers = {"location": location}, uri = addr)
-                break
-            if not addr_or_failure:
-                addr_or_failure = defer.fail(IOError("No hosts available"))
-            return addr_or_failure
+                uri = "://".join(('http', addr))
+                d = httpAgent.request(method="HEAD", headers = Headers({"location": location}), uri = uri)
+                d.addBoth(responded, addr)
+                return d
+            d = deferLater(reactor, 0, test)
+            return d
         def ipaddr(addr):
             return addr
         d = None
         if config.resolve == "self":
             d = getOwnIpAddr()
-            d.addCallback(ipaddr)
         elif config.resolve == "endpoint":
             endpoint = choice(config.endpoints)
             netloc = urlparse.urlparse(endpoint).netloc
             d = client.lookupAddress(netloc)
             d.addCallback(direct)
+        d.addCallback(ipaddr)
         return d
     d = deferLater(reactor, 0, getConfiguration, name)
-    d.addCallback(discover)
+    def gotFailure(failure):
+        raise failure
+    d.addCallbacks(discover, gotFailure)
     return d
 
