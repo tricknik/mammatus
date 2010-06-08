@@ -9,7 +9,7 @@ from twisted.internet import reactor
 from twisted.internet.task import deferLater
 from twisted.names import dns, common
 
-class MammatusDnsController(common.ResolverBase):
+class MammatusDnsResolver(common.ResolverBase):
     def setModel(self, model):
         self.model = model
     def _lookup(self, name, cls, type, timeout):
@@ -18,9 +18,9 @@ class MammatusDnsController(common.ResolverBase):
             lookup = getattr(self, queryType)
             return lookup(name, type, timeout)
         else:
-            raise NotImplementedError("No Controller for query class %s" % queryType)
+            raise NotImplementedError("No Controller for query type %s" % queryType)
 
-class Controller(MammatusDnsController):
+class Controller(MammatusDnsResolver):
     def A(self, name, cls, timeout):
         def resolve(addr):
             RecordA = dns.Record_A(addr)

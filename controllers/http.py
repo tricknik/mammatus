@@ -11,27 +11,45 @@ from twisted.web import server, resource
 from twisted.names import client
 from random import choice
 
-class MammatusRedirect(resource.Resource):
-    """ Redirect All GET requests to CDN
-    """
+class MammatusHttpResource(resource.Resource):
     isLeaf = True
     def setModel(self, model):
         self.model = model
     def render_GET(self, request):
+        config = None
         def error(failure):
             failure.printTraceback(request)
             request.finish()
-        def redirect(config):
+        def direct(config):
             endpoint = choice(config.endpoints) 
-            target =  urlparse.urljoin(endpoint, request.uri)
-            request.redirect(target)
-            request.finish()
+            mode = "redirect"
+            if endpoint == "local":
+                mode = "local"
+            elif config.get == "proxy":
+                mode = "proxy"
+            d = None
+            if hasattr(self, mode):
+                resource = getattr(self, mode)
+                resource(request, endpoint, config)
+            else:
+                d = defer.fail(NotImplementedError("No Controller for mode %s" % mode))
+            return d
         url = request.getRequestHostname()
         d =  deferLater(reactor, 0, self.model.getConfiguration, url)
-        d.addCallbacks(redirect, error)
+        d.addCallbacks(direct, error)
         return server.NOT_DONE_YET
 
-def getResource(model):
-    resource = MammatusRedirect()
-    resource.setModel(model)
-    return resource
+class Controller(MammatusHttpResource):
+    def serve(self, request, endpoint, config):
+        pass
+    def proxy(self, request, endpoint, config):
+        pass
+    def redirect(self, request, endpoint, config):
+        target =  urlparse.urljoin(endpoint, request.uri)
+        request.redirect(target)
+        request.finish()
+
+def getController(model):
+    controller = Controller()
+    controller.setModel(model)
+    return controller

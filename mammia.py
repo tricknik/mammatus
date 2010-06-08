@@ -9,10 +9,13 @@ Mammatus exploits the ubiquity of DNS fail-over to implement
 hight availablity http service.  
 
 This implementation includes support for resolving the endpoint
-IP as well as redirecting to a target domain.
+IP as well as redirecting to a target domain, proxying and serving
+local files.
 
 This is selected by specifying resolve=self or resolve=endpoint in
 the _mammatus TXT record for the subdomain.
+
+endpoints can be forign or local. 
 
 USAGE:
     sudo twistd -[n]y mammatus.tac
@@ -43,11 +46,11 @@ def expose(application):
         internet.TCPServer(53, tcpFactory).setServiceParent(dns_service)
         internet.UDPServer(53, udpFactory).setServiceParent(dns_service)
         dns_service.setServiceParent(application)
-    def attachServer(server):
+    def attachHttpController(http_controller):
         #########
         # Mammatus feeds you, over HTTP.
         ##
-        httpFactory = web_server.Site(server)
+        httpFactory = web_server.Site(http_controller)
         web_service = internet.TCPServer(80, httpFactory)
         web_service.setServiceParent(application)
 
@@ -56,6 +59,6 @@ def expose(application):
     ##
     deferDnsController = deferLater(reactor, 0, dns.getController, model)
     deferDnsController.addCallback(attachDnsController)
-    deferServer = deferLater(reactor, 0, http.getResource, model)
-    deferServer.addCallback(attachServer)
+    deferHttpController = deferLater(reactor, 0, http.getController, model)
+    deferHttpController.addCallback(attachHttpController)
 
