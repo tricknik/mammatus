@@ -8,6 +8,7 @@ import socket, urlparse
 from twisted.internet import reactor, defer
 from twisted.internet.task import deferLater
 from twisted.names import client
+from twisted.web.client import Agent
 from random import choice
 
 class MammatusConfiguration:
@@ -101,6 +102,9 @@ def getHostByName(name):
             addr_or_failure = None
             for a in answer:
                 addr_or_failure = str(a.payload.dottedQuad())
+                addr = "http://noway/nohow"
+                location = "://".join(('http', name))
+                r = Agent.request(method="HEAD", headers = {"location": location}, uri = addr)
                 break
             if not addr_or_failure:
                 addr_or_failure = defer.fail(IOError("No hosts available"))

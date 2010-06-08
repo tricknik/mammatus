@@ -5,11 +5,11 @@ Dmytri Kleiner <dk@telekommunisten.net>, 2010
 """
 from twisted.application import service
 try:
-    from mammatus import multimammia 
+   import mammia
 except ImportError:
-    import sys
-    sys.path.append('.')
-    from mammatus import multimammia 
+   import sys
+   sys.path.append(".")
+   import mammia
 
 #########
 # All Hail Mammatus, the many breasted goddess
@@ -17,5 +17,5 @@ except ImportError:
 # numerous nipples, and hunger no more.
 ##
 application = service.Application("Mammatus Tracker")
-multimammia.attach(application)
+mammia.expose(application)
 
