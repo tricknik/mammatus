@@ -4,11 +4,12 @@ Mammatus, a DNS-centric HA platform
 Dmytri Kleiner <dk@telekommunisten.net>, 2010
 """
 
-import socket, urlparse
+import socket, urlparse, os
 from twisted.internet import reactor, defer
 from twisted.internet.task import deferLater
 from twisted.web import server, resource
 from twisted.web.proxy import ReverseProxyResource
+from twisted.web.static import File
 from twisted.names import client
 from random import choice
 
@@ -27,7 +28,7 @@ class MammatusHttpResource(resource.Resource):
             endpoint = choice(config.endpoints) 
             mode = "redirect"
             if endpoint == "local":
-                mode = "local"
+                mode = "serve"
             elif config.get == "proxy":
                 mode = "proxy"
             d = None
@@ -45,7 +46,9 @@ class MammatusHttpResource(resource.Resource):
 
 class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
-        pass
+        path = "".join((self.localRoot, request.uri))
+        file = File(path)
+        file.render(request)
     def proxy(self, request, endpoint, config):
         host  = urlparse.urlparse(endpoint).netloc
         rproxy = ReverseProxyResource(host, 80, request.uri)
