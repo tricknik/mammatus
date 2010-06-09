@@ -17,7 +17,7 @@ class MammatusHttpResource(resource.Resource):
     def setModel(self, model):
         self.model = model
     def setLocalRoot(self, localroot):
-        self.localRoot = localroot)
+        self.localRoot = localroot
     def render_GET(self, request):
         config = None
         def error(failure):
@@ -41,6 +41,18 @@ class MammatusHttpResource(resource.Resource):
         d =  deferLater(reactor, 0, self.model.getConfiguration, url)
         d.addCallbacks(direct, error)
         return server.NOT_DONE_YET
+
+class Controller(MammatusHttpResource):
+    def serve(self, request, endpoint, config):
+        pass
+    def proxy(self, request, endpoint, config):
+        host  = urlparse.urlparse(endpoint).netloc
+        rproxy = ReverseProxyResource(host, 80, request.uri)
+        rproxy.render(request)
+    def redirect(self, request, endpoint, config):
+        target = urlparse.urljoin(endpoint, request.uri)
+        request.redirect(target)
+        request.finish()
 
 def getController(model, localroot="/srv/mammatus"):
     controller = Controller()
