@@ -41,6 +41,7 @@ class MammatusHttpResource(resource.Resource):
         d =  deferLater(reactor, 0, self.model.getConfiguration, url)
         d.addCallbacks(direct, error)
         return server.NOT_DONE_YET
+    render_POST = render_GET
 
 class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
@@ -54,8 +55,9 @@ class Controller(MammatusHttpResource):
         request.redirect(target)
         request.finish()
 
-def getController(model, localroot="/srv/mammatus"):
+def getController(model, localroot="/srv/http"):
     controller = Controller()
     controller.setModel(model)
     controller.setLocalRoot(localroot)
     return controller
+
