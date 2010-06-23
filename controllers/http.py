@@ -7,7 +7,7 @@ Dmytri Kleiner <dk@telekommunisten.net>, 2010
 import socket, urlparse, os
 from twisted.internet import reactor, defer
 from twisted.internet.task import deferLater
-from twisted.web import server, resource
+from twisted.web import server, resource, script
 from twisted.web.proxy import ReverseProxyResource
 from twisted.web.static import File
 from twisted.names import client
@@ -48,6 +48,8 @@ class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
         path = "".join((self.localRoot, request.uri))
         file = File(path)
+        file.ignoreExt(".rpy")
+        file.processors = {'.rpy': script.ResourceScript}
         file.render(request)
     def proxy(self, request, endpoint, config):
         host  = urlparse.urlparse(endpoint).netloc
