@@ -7,9 +7,7 @@ Dmytri Kleiner <dk@telekommunisten.net>, 2010
 import socket, urlparse, os
 from twisted.internet import reactor, defer
 from twisted.internet.task import deferLater
-from twisted.web import server, resource, script
-from twisted.web.proxy import ReverseProxyResource
-from twisted.web.static import File
+from twisted.web import server, resource, static, script, proxy
 from twisted.names import client
 from random import choice
 
@@ -26,9 +24,9 @@ class MammatusHttpResource(resource.Resource):
             request.finish()
         def direct(config):
             endpoint = choice(config.endpoints) 
-            mode = "redirect"
-            if endpoint == "local":
-                mode = "serve"
+            mode = "serve"
+            if endpoint == "redirect":
+                mode = "redirect"
             elif config.get == "proxy":
                 mode = "proxy"
             d = None
@@ -46,14 +44,20 @@ class MammatusHttpResource(resource.Resource):
 
 class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
-        path = "".join((self.localRoot, request.uri))
-        file = File(path)
-        file.ignoreExt(".rpy")
-        file.processors = {'.rpy': script.ResourceScript}
+        path = "".join((self.localRoot, request.path))
+        if os.path.exists(path) and not path.endswith(".epy"):
+            file = static.File(path)
+        else:
+            if not path.endswith(".epy"):
+                path = ".".join((path, 'epy'))
+            if os.path.exists(path):
+                file = script.PythonScript(path, static.Registry())
+            else:
+                file = static.File.childNotFound
         file.render(request)
     def proxy(self, request, endpoint, config):
         host  = urlparse.urlparse(endpoint).netloc
-        rproxy = ReverseProxyResource(host, 80, request.uri)
+        rproxy = proxy.ReverseProxyResource(host, 80, request.uri)
         rproxy.render(request)
     def redirect(self, request, endpoint, config):
         target = urlparse.urljoin(endpoint, request.uri)

@@ -128,13 +128,13 @@ def getHostByName(name):
         def ipaddr(addr):
             return addr
         d = None
-        if config.resolve == "self":
-            d = getOwnIpAddr()
-        elif config.resolve == "endpoint":
+        if config.resolve == "endpoint":
             endpoint = choice(config.endpoints)
             netloc = urlparse.urlparse(endpoint).netloc
             d = client.lookupAddress(netloc)
             d.addCallback(direct)
+        else:
+            d = getOwnIpAddr()
         d.addCallback(ipaddr)
         return d
     d = deferLater(reactor, 0, getConfiguration, name)
