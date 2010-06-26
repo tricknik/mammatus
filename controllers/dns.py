@@ -18,7 +18,10 @@ class MammatusDnsResolver(common.ResolverBase):
             lookup = getattr(self, queryType)
             return lookup(name, type, timeout)
         else:
-            raise NotImplementedError("No Controller for query type %s" % queryType)
+            def resolve():
+                return ([], [], [])
+            d = deferLater(reactor, 0, resolve)
+            return d
 
 class Controller(MammatusDnsResolver):
     def A(self, name, cls, timeout):
@@ -29,7 +32,6 @@ class Controller(MammatusDnsResolver):
         d = deferLater(reactor, 0, self.model.getHostByName, name)
         d.addCallback(resolve)
         return d
-
 def getController(model):
     controller = Controller()
     controller.setModel(model)
