@@ -7,7 +7,7 @@ Dmytri Kleiner <dk@telekommunisten.net>, 2010
 import socket, urlparse, os
 from twisted.internet import reactor, defer
 from twisted.internet.task import deferLater
-from twisted.web import server, resource, static, script, proxy
+from twisted.web import server, resource, static, proxy
 from twisted.names import client
 from random import choice
 
@@ -42,6 +42,14 @@ class MammatusHttpResource(resource.Resource):
         return server.NOT_DONE_YET
     render_POST = render_GET
 
+class MammatusScript:
+    def __init__(self, path, config):
+        self.path = path
+        self.config = config
+    def render(self, request):
+        context = {'request': request, 'config':self.config}
+        execfile(self.path, context, context)
+
 class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
         path = "".join((self.localRoot, request.path))
@@ -51,8 +59,7 @@ class Controller(MammatusHttpResource):
             if not path.endswith(".ma"):
                 path = ".".join((path, 'ma'))
             if os.path.exists(path):
-                context = {'request': request}
-                execfile(path, context, context)
+                file = MammatusScript(path, config)
             else:
                 file = static.File.childNotFound
         file.render(request)
