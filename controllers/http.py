@@ -45,13 +45,14 @@ class MammatusHttpResource(resource.Resource):
 class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
         path = "".join((self.localRoot, request.path))
-        if os.path.exists(path) and not path.endswith(".epy"):
+        if os.path.exists(path) and not path.endswith(".ma"):
             file = static.File(path)
         else:
-            if not path.endswith(".epy"):
-                path = ".".join((path, 'epy'))
+            if not path.endswith(".ma"):
+                path = ".".join((path, 'ma'))
             if os.path.exists(path):
-                file = script.PythonScript(path, static.Registry())
+                context = {'request': request}
+                execfile(path, context, context)
             else:
                 file = static.File.childNotFound
         file.render(request)
