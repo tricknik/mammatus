@@ -27,7 +27,7 @@ class Controller(MammatusDnsResolver):
     def A(self, name, cls, timeout):
         def resolve(addr):
             RecordA = dns.Record_A(addr)
-            RR = dns.RRHeader(name=name,cls=cls,type=dns.A,ttl=1,payload=RecordA)
+            RR = dns.RRHeader(name=name,cls=cls,type=dns.A,ttl=60,payload=RecordA)
             return ([RR], [], [])
         d = deferLater(reactor, 0, self.model.getHostByName, name)
         d.addCallback(resolve)
