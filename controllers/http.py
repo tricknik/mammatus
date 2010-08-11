@@ -23,12 +23,15 @@ class MammatusHttpResource(resource.Resource):
             failure.printTraceback(request)
             request.finish()
         def direct(config):
-            endpoint = choice(config.endpoints) 
             mode = "serve"
-            if endpoint == "redirect":
-                mode = "redirect"
-            elif config.get == "proxy":
-                mode = "proxy"
+            if config.endpoints:
+                endpoint = choice(config.endpoints) 
+                if endpoint == "redirect":
+                    mode = "redirect"
+                elif config.get == "proxy":
+                    mode = "proxy"
+            else:
+                endpoint = None
             d = None
             if hasattr(self, mode):
                 resource = getattr(self, mode)
@@ -52,17 +55,26 @@ class MammatusScript:
 
 class Controller(MammatusHttpResource):
     def serve(self, request, endpoint, config):
+        finished = False
         path = "".join((self.localRoot, request.path))
+        if os.path.isdir(path):
+            if os.path.exists("index.ma"):
+                path = "".join((path, 'index.ma'))
+            else:
+                path = "".join((path, 'index.html'))
         if os.path.exists(path) and not path.endswith(".ma"):
             file = static.File(path)
         else:
-            if not path.endswith(".ma"):
+            if not path.endswith(".ma") and not path.endswith(".html"):
                 path = ".".join((path, 'ma'))
             if os.path.exists(path):
                 file = MammatusScript(path, config)
             else:
                 file = static.File.childNotFound
+                finished = True
         file.render(request)
+        if finished:
+            request.finish()
     def proxy(self, request, endpoint, config):
         host  = urlparse.urlparse(endpoint).netloc
         rproxy = proxy.ReverseProxyResource(host, 80, request.uri)

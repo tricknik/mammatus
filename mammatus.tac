@@ -16,6 +16,6 @@ except ImportError:
 # of commodity cloud computing! Ween at her
 # numerous nipples, and hunger no more.
 ##
-application = service.Application("Mammatus Tracker")
+application = service.Application("Mammatus Node")
 mammia.expose(application)
 
