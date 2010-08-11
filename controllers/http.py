@@ -67,6 +67,7 @@ class Controller(MammatusHttpResource):
                 path = "".join((path, 'index.html'))
         if os.path.exists(path) and not path.endswith(".ma"):
             file = static.File(path)
+            finished = True
         else:
             if not path.endswith(".ma") and not path.endswith(".html"):
                 path = ".".join((path, 'ma'))
