@@ -58,7 +58,7 @@ class Controller(MammatusHttpResource):
         finished = False
         path = "".join((self.localRoot, request.path))
         if os.path.isdir(path):
-            if not path.endwith("/"):
+            if not path.endswith("/"):
                 path = "".join((path,"/"))
             dPath = "".join((path, 'index.ma'))
             if os.path.exists(dPath):
